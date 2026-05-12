@@ -1,10 +1,12 @@
 import abc
 import typing
 
+
 class DataProcessor(abc.ABC):
-    def __init__(self):
+    def __init__(self) -> None:
         self._data: list[str] = []
         self._total: int = 0
+        self._rank: int = 0
 
     @abc.abstractmethod
     def validate(self, data: typing.Any) -> bool:
@@ -18,14 +20,15 @@ class DataProcessor(abc.ABC):
         if not self._data:
             raise Exception("No data")
         value = self._data.pop(0)
-        return (0, value)
+        rank = self._rank
+        self._rank += 1
+        return (rank, value)
 
     def get_total(self) -> int:
         return self._total
 
     def get_remaining(self) -> int:
         return len(self._data)
-
 
 
 class NumericProcessor(DataProcessor):
@@ -49,7 +52,6 @@ class NumericProcessor(DataProcessor):
             self._total += 1
 
 
-
 class TextProcessor(DataProcessor):
     def validate(self, data: typing.Any) -> bool:
         if isinstance(data, str):
@@ -71,10 +73,9 @@ class TextProcessor(DataProcessor):
             self._total += 1
 
 
-
 class LogProcessor(DataProcessor):
     def validate(self, data: typing.Any) -> bool:
-        def valid_dict(d):
+        def valid_dict(d: typing.Any) -> bool:
             return isinstance(d, dict) and all(
                 isinstance(k, str) and isinstance(v, str)
                 for k, v in d.items()
@@ -90,7 +91,7 @@ class LogProcessor(DataProcessor):
         if not self.validate(data):
             raise Exception("Improper log data")
 
-        def format_log(d):
+        def format_log(d: dict[str, str]) -> str:
             return d["log_level"] + ": " + d["log_message"]
 
         if isinstance(data, list):
@@ -102,9 +103,8 @@ class LogProcessor(DataProcessor):
             self._total += 1
 
 
-
 class DataStream:
-    def __init__(self):
+    def __init__(self) -> None:
         self._processors: list[DataProcessor] = []
 
     def register_processor(self, proc: DataProcessor) -> None:
@@ -121,7 +121,10 @@ class DataStream:
                     break
 
             if not handled:
-                print(f"DataStream error - Can't process element in stream: {item}")
+                print(
+                    f"DataStream error - Can't process "
+                    f"element in stream: {item}"
+                )
 
     def print_processors_stats(self) -> None:
         print("== DataStream statistics ==")
@@ -138,14 +141,13 @@ class DataStream:
             )
 
 
-
 print("=== Code Nexus - Data Stream ===")
 
-print("Initialize Data Stream...")
+print("\nInitialize Data Stream...")
 ds = DataStream()
 ds.print_processors_stats()
 
-print("Registering Numeric Processor")
+print("\nRegistering Numeric Processor")
 num = NumericProcessor()
 ds.register_processor(num)
 
@@ -153,18 +155,24 @@ stream = [
     "Hello world",
     [3.14, -1, 2.71],
     [
-        {"log_level": "WARNING", "log_message": "Telnet access! Use ssh instead"},
+        {
+            "log_level": "WARNING",
+            "log_message": (
+                "Telnet access! "
+                "Use ssh instead"
+            ),
+        },
         {"log_level": "INFO", "log_message": "User wil is connected"},
     ],
     42,
     ["Hi", "five"],
 ]
 
-print("Send first batch of data on stream:", stream)
+print("\nSend first batch of data on stream:", stream)
 ds.process_stream(stream)
 ds.print_processors_stats()
 
-print("Registering other data processors")
+print("\nRegistering other data processors")
 txt = TextProcessor()
 log = LogProcessor()
 
@@ -175,7 +183,10 @@ print("Send the same batch again")
 ds.process_stream(stream)
 ds.print_processors_stats()
 
-print("Consume some elements from the data processors: Numeric 3, Text 2, Log 1")
+print(
+    "\nConsume some elements from the data processors: "
+    "Numeric 3, Text 2, Log 1"
+)
 
 for _ in range(3):
     num.output()

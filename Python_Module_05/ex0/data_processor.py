@@ -1,9 +1,12 @@
 import abc
 import typing
 
+LogDict = dict[str, str]
+
+
 class DataProcessor(abc.ABC):
-    def __init__(self):
-        self.data = []
+    def __init__(self) -> None:
+        self.data: list[str] = []
         self.rank = 0
 
     @abc.abstractmethod
@@ -24,7 +27,6 @@ class DataProcessor(abc.ABC):
         return (rank, value)
 
 
-
 class NumericProcessor(DataProcessor):
     def validate(self, data: typing.Any) -> bool:
         if isinstance(data, (int, float)):
@@ -33,7 +35,10 @@ class NumericProcessor(DataProcessor):
             return all(isinstance(x, (int, float)) for x in data)
         return False
 
-    def ingest(self, data: typing.Any) -> None:
+    def ingest(
+            self,
+            data: int | float | list[int | float],
+    ) -> None:
         if not self.validate(data):
             raise Exception("Improper numeric data")
 
@@ -44,7 +49,6 @@ class NumericProcessor(DataProcessor):
             self.data.append(str(data))
 
 
-
 class TextProcessor(DataProcessor):
     def validate(self, data: typing.Any) -> bool:
         if isinstance(data, str):
@@ -53,7 +57,10 @@ class TextProcessor(DataProcessor):
             return all(isinstance(x, str) for x in data)
         return False
 
-    def ingest(self, data: typing.Any) -> None:
+    def ingest(
+            self,
+            data: str | list[str],
+    ) -> None:
         if not self.validate(data):
             raise Exception("Improper text data")
 
@@ -63,10 +70,9 @@ class TextProcessor(DataProcessor):
             self.data.append(data)
 
 
-
 class LogProcessor(DataProcessor):
     def validate(self, data: typing.Any) -> bool:
-        def valid_dict(d):
+        def valid_dict(d: typing.Any) -> bool:
             return isinstance(d, dict) and all(
                 isinstance(k, str) and isinstance(v, str)
                 for k, v in d.items()
@@ -78,11 +84,11 @@ class LogProcessor(DataProcessor):
             return all(valid_dict(x) for x in data)
         return False
 
-    def ingest(self, data: typing.Any) -> None:
+    def ingest(self, data: LogDict | list[LogDict]) -> None:
         if not self.validate(data):
             raise Exception("Improper log data")
 
-        def format_log(d):
+        def format_log(d: LogDict) -> str:
             return d["log_level"] + ": " + d["log_message"]
 
         if isinstance(data, list):
@@ -92,11 +98,10 @@ class LogProcessor(DataProcessor):
             self.data.append(format_log(data))
 
 
-
 print("=== Code Nexus - Data Processor ===")
 
 
-print("Testing Numeric Processor...")
+print("\nTesting Numeric Processor...")
 num = NumericProcessor()
 
 print("Trying to validate input'42':", num.validate(42))
@@ -117,8 +122,7 @@ for i in range(3):
     print(f"Numeric value {r}: {v}")
 
 
-
-print("Testing Text Processor...")
+print("\nTesting Text Processor...")
 txt = TextProcessor()
 
 print("Trying to validate input'42':", txt.validate(42))
@@ -132,8 +136,7 @@ r, v = txt.output()
 print(f"Text value {r}: {v}")
 
 
-
-print("Testing Log Processor...")
+print("\nTesting Log Processor...")
 log = LogProcessor()
 
 print("Trying to validate input'Hello':", log.validate("Hello"))
